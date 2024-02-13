@@ -1,0 +1,17 @@
+[package]
+name = "sommelier-auction-proto-build"
+version = "0.1.0"
+authors = ["PeggyJV","Justin Kilpatrick <justin@althea.net>", "Collin Brittain"]
+edition = "2021"
+
+
+[dependencies]
+prost = "0.7"
+tonic = "0.4"
+prost-build = "0.7"
+tempdir = "0.3"
+walkdir = "2"
+tonic-build = "0.4"
+regex = "1.5"
+reqwest = { version = "0.11.24", features = ["blocking"] }
+zip = "0.6.6"

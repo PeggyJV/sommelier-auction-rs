@@ -1,0 +1,20 @@
+[workspace]
+members = [
+    "crates/sommelier-auction-proto",
+    "crates/sommelier-auction",
+]
+defaults-members = [
+    "sommelier-auction-proto",
+    "sommelier-auction",
+]
+exclude = [
+    "crates/sommelier-auction-proto-build",
+]
+resolver = "2"
+
+[workspace.package]
+verson = "0.1.0"
+authors = ["Collin Brittain"]
+edition = "2021"
+
+[workspace.dependencies]
