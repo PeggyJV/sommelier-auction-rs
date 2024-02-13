@@ -1,4 +1,3 @@
-
 pub use cosmos_sdk_proto;
 
 pub mod auction {

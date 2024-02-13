@@ -1,14 +1,9 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub use sommelier_auction_proto::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod client;
+pub mod denom;
+pub mod parameters;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub async fn get_default_client() -> eyre::Result<client::Client> {
+    client::Client::with_endpoint(client::DEFAULT_ENDPOINT.to_string()).await
 }

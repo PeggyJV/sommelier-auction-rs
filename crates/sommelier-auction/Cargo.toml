@@ -6,3 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+eyre.workspace = true
+tonic.workspace = true
+
+sommelier-auction-proto = { path = "../sommelier-auction-proto" }
+lazy_static = "1.4.0"
+
+[dev-dependencies]
+assay = "0.1"
+futures = "0.3"
+
