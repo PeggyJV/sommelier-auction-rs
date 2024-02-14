@@ -9,6 +9,7 @@ defaults-members = [
     "sommelier-auction",
     "sommelier-auction-order-engine",
     "sommelier-auction-proto",
+    "price_feed",
 ]
 exclude = [
     "crates/sommelier-auction-proto-build",
