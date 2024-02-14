@@ -3,6 +3,7 @@ members = [
     "crates/sommelier-auction",
     "crates/sommelier-auction-order-engine",
     "crates/sommelier-auction-proto",
+    "crates/price_feed",
 ]
 defaults-members = [
     "sommelier-auction",
