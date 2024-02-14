@@ -1,6 +1,16 @@
-use eyre::Result;
+use std::str::FromStr;
 
-use crate::{auction::*, cellarfees::*, denom::Denom, parameters::AuctionParameters};
+use eyre::Result;
+use ocular::{cosmrs::Any, tx::UnsignedTx, MsgClient, QueryClient};
+use prost::Message;
+use sommelier_auction_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
+
+use crate::{
+    auction::*, bid::Bid, cellarfees::*, denom::Denom, parameters::AuctionParameters, AccountInfo,
+    BidResult,
+};
+
+pub type TxSyncResponse = ocular::cosmrs::rpc::endpoint::broadcast::tx_sync::Response;
 
 pub const DEFAULT_ENDPOINT: &str = "https://sommelier-grpc.polkachu.com:14190";
 
@@ -72,7 +82,7 @@ impl Client {
     }
 
     /// Query all bids for an auction
-    pub async fn auction_bids(&mut self, auction_id: u32) -> Result<Vec<Bid>> {
+    pub async fn auction_bids(&mut self, auction_id: u32) -> Result<Vec<BidResult>> {
         let request = QueryBidsByAuctionRequest {
             auction_id,
             pagination: None,
@@ -83,7 +93,7 @@ impl Client {
     }
 
     /// Query bid by bid ID and auction ID
-    pub async fn auction_bid(&mut self, auction_id: u32, bid_id: u64) -> Result<Bid> {
+    pub async fn auction_bid(&mut self, auction_id: u32, bid_id: u64) -> Result<BidResult> {
         let request = QueryBidRequest { auction_id, bid_id };
         let response = self.auction_client.query_bid(request).await?;
 
@@ -163,5 +173,66 @@ impl Client {
         };
 
         Ok(auction_parameters)
+    }
+
+    /// Submit a bid to an auction
+    pub async fn submit_bid(&mut self, sender: &AccountInfo, bid: Bid) -> Result<BidResult> {
+        let mut unsigned_tx = UnsignedTx::new();
+        let request = MsgSubmitBidRequest {
+            auction_id: bid.auction_id,
+            signer: sender.address("somm")?,
+            max_bid_in_usomm: Some(Coin {
+                amount: bid.maximum_usomm_in.to_string(),
+                denom: "usomm".to_string(),
+            }),
+            sale_token_minimum_amount: Some(Coin {
+                amount: bid.minimum_tokens_out.to_string(),
+                denom: bid.fee_token.to_string(),
+            }),
+        };
+
+        // most of this is just getting things into a form ocular's API will accept.
+        // kind of clunky when using modules that aren't part of ocular.
+        let mut bytes = vec![];
+        request.encode(&mut bytes)?;
+
+        let any = Any {
+            type_url: "auction.v1.MsgSubmitBidRequest".to_string(),
+            value: bytes,
+        };
+        unsigned_tx.add_msg(any);
+
+        let mut q_client = QueryClient::new(&self.grpc_endpoint)?;
+        let fee_info = ocular::prelude::FeeInfo::new(ocular::cosmrs::Coin {
+            amount: 0,
+            denom: ocular::cosmrs::Denom::from_str("usomm")?,
+        });
+        let chain_context = ocular::chain::ChainContext {
+            id: "sommelier-3".to_string(),
+            prefix: "somm".to_string(),
+        };
+        let signed_tx = unsigned_tx
+            .sign(sender, fee_info, &chain_context, &mut q_client)
+            .await?;
+        let mut m_client = MsgClient::new(&self.grpc_endpoint)?;
+        let response = signed_tx.broadcast_sync(&mut m_client).await?;
+
+        if response.code.value() != 0 {
+            return Err(eyre::eyre!(
+                "error submitting bid. tx_hash = {}, log = {}",
+                response.hash,
+                response.log
+            ));
+        }
+
+        // extract the Bid from the response. since we are using broadcast_sync, this is the result
+        // of CheckTx and may not actually exist on chain. broadcast_commit is frequently
+        // unreliable due to timeout before DeliverTx returns, so it's unlikely anything would be
+        // gained by using it instead. consumers should query the chain to confirm Bid settlement.
+        let response = MsgSubmitBidResponse::decode(response.data.value().as_ref())?;
+
+        response
+            .bid
+            .ok_or_else(|| eyre::eyre!("no bid in response"))
     }
 }

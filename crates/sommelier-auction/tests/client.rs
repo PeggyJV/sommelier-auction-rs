@@ -1,6 +1,7 @@
 use assay::assay;
 use futures::executor::block_on;
-use sommelier_auction::denom::Denom;
+use sommelier_auction::{denom::Denom, AccountInfo};
+use sommelier_auction_proto::auction::Bid;
 
 /// Basic no-error or expected error tests for all client queries
 #[assay]
@@ -63,5 +64,21 @@ async fn test_token_price() {
     let result = block_on(client.token_price(Denom::USDC));
 
     assert!(result.is_ok());
-    assert_eq!(1.0, result.unwrap().usd_price.parse().unwrap());
+    assert_eq!(1.0f64, result.unwrap().usd_price.parse::<f64>().unwrap());
+}
+
+#[assay]
+async fn test_submit_bid() {
+    let mut client = sommelier_auction::get_default_client().await.unwrap();
+    let sender = AccountInfo::from_mnemonic("hockey excess evoke remain render silver buffalo elephant install abandon stuff margin sponsor hero wear rigid glad ancient deputy all snake ginger brother nut", "").unwrap();
+    let bid = sommelier_auction::bid::Bid {
+        auction_id: 1000,
+        fee_token: Denom::USDC,
+        maximum_usomm_in: 10_000_000_000,
+        minimum_tokens_out: 1_600_000_000,
+    };
+
+    let result = block_on(client.submit_bid(&sender, bid));
+
+    println!("{:?}", result);
 }
