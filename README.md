@@ -10,3 +10,18 @@ The `sommelier-auction` crate is a generalized auction library containing a clie
 
 The `sommelier-auction-order-engine` crate is a *very* simple order engine. It *does not* check that the uSOMM it will bid has a USD value that results in a favorable transaction. It only check that the uSOMM-denominated cost meets the user's specified parameters.
 
+#Contributing
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as below, without any additional terms or conditions.
+
+# License
+
+© 2024 Peggy J.V.
+
+This project is licensed under either of
+
+Apache License, Version 2.0 (LICENSE-APACHE)
+MIT license (LICENSE-MIT)
+at your option.
+
+The SPDX license identifier for this project is MIT OR Apache-2.0. 
