@@ -9,4 +9,6 @@ pub struct Config {
     pub total_usomm_budget: u64,
     /// The orders loaded in from a orderfile
     pub orders: Vec<Order>,
+    /// Key for signing and spending wallet
+    pub key_path: Option<String>,
 }
