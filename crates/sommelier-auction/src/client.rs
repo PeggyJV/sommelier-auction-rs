@@ -12,9 +12,11 @@ use crate::{
 
 pub type TxSyncResponse = ocular::cosmrs::rpc::endpoint::broadcast::tx_sync::Response;
 
-pub const DEFAULT_ENDPOINT: &str = "https://sommelier-grpc.polkachu.com:14190";
+pub const DEFAULT_GRPC_ENDPOINT: &str = "https://sommelier-grpc.polkachu.com:14190";
+pub const DEFAULT_RPC_ENDPOINT: &str = "https://sommelier-rpc.polkachu.com:443";
 
 pub struct Client {
+    rpc_endpoint: String,
     grpc_endpoint: String,
     auction_client: crate::auction::query_client::QueryClient<tonic::transport::Channel>,
     cellarfees_client: crate::cellarfees::query_client::QueryClient<tonic::transport::Channel>,
@@ -22,14 +24,15 @@ pub struct Client {
 
 impl Client {
     /// Construct a [`Client`] with the given endpoint
-    pub async fn with_endpoint(grpc_endpoint: String) -> Result<Self> {
+    pub async fn with_endpoints(rpc: String, grpc: String) -> Result<Self> {
         let auction_client =
-            crate::auction::query_client::QueryClient::connect(grpc_endpoint.clone()).await?;
+            crate::auction::query_client::QueryClient::connect(grpc.clone()).await?;
         let cellarfees_client =
-            crate::cellarfees::query_client::QueryClient::connect(grpc_endpoint.clone()).await?;
+            crate::cellarfees::query_client::QueryClient::connect(grpc.clone()).await?;
 
         Ok(Self {
-            grpc_endpoint,
+            rpc_endpoint: rpc,
+            grpc_endpoint: grpc,
             auction_client,
             cellarfees_client,
         })
@@ -197,7 +200,7 @@ impl Client {
         request.encode(&mut bytes)?;
 
         let any = Any {
-            type_url: "auction.v1.MsgSubmitBidRequest".to_string(),
+            type_url: "/auction.v1.MsgSubmitBidRequest".to_string(),
             value: bytes,
         };
         unsigned_tx.add_msg(any);
@@ -214,25 +217,32 @@ impl Client {
         let signed_tx = unsigned_tx
             .sign(sender, fee_info, &chain_context, &mut q_client)
             .await?;
-        let mut m_client = MsgClient::new(&self.grpc_endpoint)?;
-        let response = signed_tx.broadcast_sync(&mut m_client).await?;
+        let mut m_client = MsgClient::new(&self.rpc_endpoint)?;
+        let response = signed_tx.broadcast_commit(&mut m_client).await?;
 
-        if response.code.value() != 0 {
+        if response.deliver_tx.code.value() != 0 {
             return Err(eyre::eyre!(
                 "error submitting bid. tx_hash = {}, log = {}",
                 response.hash,
-                response.log
+                response.deliver_tx.log
             ));
         }
+
+        println!("response data: {:?}", response.deliver_tx.data);
 
         // extract the Bid from the response. since we are using broadcast_sync, this is the result
         // of CheckTx and may not actually exist on chain. broadcast_commit is frequently
         // unreliable due to timeout before DeliverTx returns, so it's unlikely anything would be
         // gained by using it instead. consumers should query the chain to confirm Bid settlement.
-        let response = MsgSubmitBidResponse::decode(response.data.value().as_ref())?;
+        if let Some(data) = response.clone().deliver_tx.data {
+            let msg_response = MsgSubmitBidResponse::decode(data.value().as_ref())?;
 
-        response
-            .bid
-            .ok_or_else(|| eyre::eyre!("no bid in response"))
+            // if the bid is not present, return an error 
+            if let Some(bid) = msg_response.bid {
+                return Ok(BidResult::from(bid));
+            }
+        }
+
+        Err(eyre::eyre!("no data in response: {:?}", response))
     }
 }

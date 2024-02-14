@@ -9,5 +9,9 @@ pub mod parameters;
 pub type BidResult = crate::auction::Bid;
 
 pub async fn get_default_client() -> eyre::Result<client::Client> {
-    client::Client::with_endpoint(client::DEFAULT_ENDPOINT.to_string()).await
+    client::Client::with_endpoints(
+        client::DEFAULT_RPC_ENDPOINT.to_string(),
+        client::DEFAULT_GRPC_ENDPOINT.to_string(),
+    )
+    .await
 }
