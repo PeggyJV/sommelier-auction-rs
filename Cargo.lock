@@ -2059,6 +2059,7 @@ dependencies = [
  "serde",
  "sommelier-auction",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

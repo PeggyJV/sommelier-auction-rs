@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use eyre::Result;
 use sommelier_auction::{auction::Auction, bid::Bid, client::Client, denom::Denom};
 use tokio::sync::mpsc::Sender;
+use tracing::{debug, error, info, warn};
 
 use crate::{order::Order, util};
 
@@ -33,21 +34,25 @@ impl Watcher {
     // This will probably hit the per-minute query rate limit, so we just move on if we fail to get
     // a price.
     async fn refresh_prices(&mut self) -> Result<()> {
+        debug!("refreshing prices");
         for denom in self.orders.keys() {
             let coingecko_id = util::denom_to_coingecko_id(denom.clone());
             match price_feed::get_usd_price_for_asset(None, &coingecko_id).await {
                 Ok(price) => self.prices.insert(denom.clone(), price),
                 Err(err) => {
-                    //log
+                    error!("failed to get price for {}: {:?}", coingecko_id, err);
                     continue;
                 }
             };
+
+            debug!("updated price for {}: {}", coingecko_id, self.prices[denom]);
         }
 
         Ok(())
     }
 
     async fn refresh_active_auctions(&mut self) -> Result<()> {
+        debug!("refreshing active auctions");
         let active_auctions = self.client.as_mut().unwrap().active_auctions().await?;
         self.active_auctions = active_auctions;
 
@@ -59,7 +64,14 @@ impl Watcher {
             Some(Client::with_endpoints("".to_string(), self.grpc_endpoint.clone()).await?);
 
         loop {
-            self.refresh_active_auctions().await?;
+            if let Err(err) = self.refresh_active_auctions().await {
+                error!("failed to refresh active auctions: {:?}", err);
+                warn!("retrying auction refresh in 5 seconds");
+                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+
+                continue;
+            }
+
             self.refresh_prices().await?;
 
             // for each active auction, check if any orders qualify for a bid
@@ -73,8 +85,12 @@ impl Watcher {
                         .clone(),
                 ) {
                     Ok(d) => d,
-                    Err(_) => {
-                        // log error
+                    Err(err) => {
+                        error!(
+                            "failed to parse auction denom from auction object: {:?}",
+                            err
+                        );
+
                         continue;
                     }
                 };
@@ -90,7 +106,10 @@ impl Watcher {
                                 }
                             }
                         } else {
-                            // log
+                            warn!(
+                                "no USD price for {}, skipping bid evaluation",
+                                auction_denom
+                            );
                         }
                     }
                 }
@@ -104,6 +123,7 @@ impl Watcher {
     // arbitrage. We're simply checking how much USD value we can get out with the max possible
     // USOMM offer.
     fn evaluate_bid(&self, order: &Order, usd_unit_value: f64, auction: &Auction) -> Option<Bid> {
+        debug!("evaluating bid for order: {:?}", order);
         let auction_unit_price_in_usomm =
             auction.current_unit_price_in_usomm.parse::<f64>().unwrap();
         let remaining_tokens_for_sale = auction
@@ -123,6 +143,13 @@ impl Watcher {
         let usd_value_out = min_possible_token_out as f64 * usd_unit_value;
 
         if order.minimum_usd_value_out as f64 <= usd_value_out {
+            info!(
+                "order qualifies for bid. usomm offer = {}, minimum token out = {}, usd value out = {}",
+                max_allowed_usomm_offer, 
+                min_possible_token_out, 
+                usd_value_out
+            );
+
             return Some(Bid {
                 auction_id: auction.id.clone(),
                 fee_token: order.fee_token.clone(),

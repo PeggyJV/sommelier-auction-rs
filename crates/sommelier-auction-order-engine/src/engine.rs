@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use eyre::Result;
 use sommelier_auction::{
-    auction::Auction, bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters,
-    AccountInfo,
+    bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters, AccountInfo,
 };
-use tokio::{join, task::JoinSet};
+use tracing::{debug, error, info};
 
-use crate::{config::Config, order::Order, util, watcher::Watcher};
+use crate::{config::Config, order::Order, watcher::Watcher};
 
 pub struct OrderEngine {
     pub orders: HashMap<Denom, Vec<Order>>,
@@ -50,6 +49,8 @@ impl OrderEngine {
                 }
             });
 
+        debug!("loaded orders: {:?}", orders);
+
         Self {
             orders,
             client: None,
@@ -64,6 +65,7 @@ impl OrderEngine {
     }
 
     pub async fn start(&mut self) -> Result<()> {
+        info!("starting auction bot");
         let mut watcher = Some(Watcher::new(
             self.orders.clone(),
             self.grpc_endpoint.clone(),
@@ -74,9 +76,11 @@ impl OrderEngine {
 
         // auction monitoring thread
         let handle = tokio::spawn(async move {
+            info!("starting watcher thread");
             loop {
                 if let Err(err) = watcher.as_mut().unwrap().monitor_auctions(tx.clone()).await {
-                    // log and restart
+                    error!("watcher returned an error: {:?}", err);
+                    continue;
                 }
 
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -90,12 +94,13 @@ impl OrderEngine {
             AccountInfo::from_mnemonic(&mnemonic, "")
                 .expect("failed to construct signer from mnemonic")
         } else {
-            panic!("");
+            handle.abort();
+            panic!("no signer key provided and no mnemonic found in environment. either provide a key_path in the config or set SOMMELIER_AUCTION_MNEMONIC in the environment to a 24 word phrase.");
         };
 
         while let Some(bid) = rx.recv().await {
             if let Err(err) = self.client.as_mut().unwrap().submit_bid(&sender, bid).await {
-                // log
+                error!("error submitting bid: {:?}", err);
             }
         }
 

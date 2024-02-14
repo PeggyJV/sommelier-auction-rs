@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 eyre.workspace = true
 serde.workspace = true
+tracing.workspace = true
 sommelier-auction = { path = "../sommelier-auction" }
 tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros"] }
 price_feed = { path = "../price_feed" }
