@@ -1,12 +1,9 @@
 use std::str::FromStr;
 
 use eyre::Result;
-use ocular::{cosmrs::{Any, bip32::secp256k1::pkcs8::der::pem::Base64Decoder}, tx::UnsignedTx, MsgClient, QueryClient};
+use ocular::{cosmrs::Any, tx::UnsignedTx, MsgClient, QueryClient};
 use prost::Message;
-use sommelier_auction_proto::cosmos_sdk_proto::cosmos::{
-    base::v1beta1::Coin,
-    tx::v1beta1::{BroadcastMode, BroadcastTxRequest},
-};
+use sommelier_auction_proto::cosmos_sdk_proto::cosmos::base::v1beta1::Coin;
 
 use crate::{
     auction::*, bid::Bid, cellarfees::*, denom::Denom, parameters::AuctionParameters, AccountInfo,
@@ -21,8 +18,6 @@ pub struct Client {
     grpc_endpoint: String,
     auction_client: crate::auction::query_client::QueryClient<tonic::transport::Channel>,
     cellarfees_client: crate::cellarfees::query_client::QueryClient<tonic::transport::Channel>,
-    tx_client: sommelier_auction_proto::cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient<
-        tonic::transport::Channel>,
 }
 
 impl Client {
@@ -32,13 +27,11 @@ impl Client {
             crate::auction::query_client::QueryClient::connect(grpc_endpoint.clone()).await?;
         let cellarfees_client =
             crate::cellarfees::query_client::QueryClient::connect(grpc_endpoint.clone()).await?;
-        let tx_client = sommelier_auction_proto::cosmos_sdk_proto::cosmos::tx::v1beta1::service_client::ServiceClient::connect(grpc_endpoint.clone()).await?;
 
         Ok(Self {
             grpc_endpoint,
             auction_client,
             cellarfees_client,
-            tx_client,
         })
     }
 
@@ -204,7 +197,7 @@ impl Client {
         request.encode(&mut bytes)?;
 
         let any = Any {
-            type_url: "/auction.v1.MsgSubmitBidRequest".to_string(),
+            type_url: "auction.v1.MsgSubmitBidRequest".to_string(),
             value: bytes,
         };
         unsigned_tx.add_msg(any);
@@ -218,50 +211,25 @@ impl Client {
             id: "sommelier-3".to_string(),
             prefix: "somm".to_string(),
         };
-
-        // since we're using gRPC to submit the transaction, we need to get the raw signed tx bytes
-        // for the request type.
-        let signed_tx_bytes = unsigned_tx
+        let signed_tx = unsigned_tx
             .sign(sender, fee_info, &chain_context, &mut q_client)
-            .await?
-            .to_bytes()?;
-        let request = BroadcastTxRequest {
-            tx_bytes: signed_tx_bytes,
-            mode: BroadcastMode::Sync.into(),
-        };
-        let response = self
-            .tx_client
-            .broadcast_tx(request)
-            .await?
-            .into_inner()
-            .tx_response
-            .unwrap();
-        
-        if response.code != 0 {
+            .await?;
+        let mut m_client = MsgClient::new(&self.grpc_endpoint)?;
+        let response = signed_tx.broadcast_sync(&mut m_client).await?;
+
+        if response.code.value() != 0 {
             return Err(eyre::eyre!(
                 "error submitting bid. tx_hash = {}, log = {}",
-                response.txhash,
-                response.raw_log
+                response.hash,
+                response.log
             ));
-        }
-
-        println!("response log: {}", response.data);
-
-        // this tx response is returning the data bytes as base64 encoded. if we want to get the
-        // (potential) resulting Bid object we have to decode base64 and then decode the proto.
-        let mut decoder = Base64Decoder::new(response.data.as_bytes()).map_err(|err| {
-            return eyre::eyre!("error decoding response data: {}", err)
-        })?;
-        let mut data_bytes = Vec::default();
-        if let Err(err) = decoder.decode(&mut data_bytes) {
-            return Err(eyre::eyre!("error decoding response data: {}", err));
         }
 
         // extract the Bid from the response. since we are using broadcast_sync, this is the result
         // of CheckTx and may not actually exist on chain. broadcast_commit is frequently
         // unreliable due to timeout before DeliverTx returns, so it's unlikely anything would be
         // gained by using it instead. consumers should query the chain to confirm Bid settlement.
-        let response = MsgSubmitBidResponse::decode(data_bytes.as_ref())?;
+        let response = MsgSubmitBidResponse::decode(response.data.value().as_ref())?;
 
         response
             .bid
