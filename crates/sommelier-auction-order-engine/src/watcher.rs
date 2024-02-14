@@ -36,11 +36,11 @@ impl Watcher {
     async fn refresh_prices(&mut self) -> Result<()> {
         debug!("refreshing prices");
         for denom in self.orders.keys() {
-            let coingecko_id = util::denom_to_coingecko_id(denom.clone());
+            let coingecko_id = util::denom_to_coingecko_id(*denom);
             match price_feed::get_usd_price_for_asset(None, &coingecko_id).await {
-                Ok(price) => self.prices.insert(denom.clone(), price),
+                Ok(price) => self.prices.insert(*denom, price),
                 Err(err) => {
-                    error!("failed to get price for {}: {:?}", coingecko_id, err);
+                    error!("failed to get price for {coingecko_id}: {err:?}");
                     continue;
                 }
             };
@@ -65,7 +65,7 @@ impl Watcher {
 
         loop {
             if let Err(err) = self.refresh_active_auctions().await {
-                error!("failed to refresh active auctions: {:?}", err);
+                error!("failed to refresh active auctions: {err:?}");
                 warn!("retrying auction refresh in 5 seconds");
                 tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
@@ -86,10 +86,7 @@ impl Watcher {
                 ) {
                     Ok(d) => d,
                     Err(err) => {
-                        error!(
-                            "failed to parse auction denom from auction object: {:?}",
-                            err
-                        );
+                        error!("failed to parse auction denom from auction object: {err:?}");
 
                         continue;
                     }
@@ -98,18 +95,14 @@ impl Watcher {
                     for order in orders {
                         // if we don't have a usd price for the token, move on
                         if let Some(usd_unit_value) = self.prices.get(&auction_denom) {
-                            if let Some(bid) = self.evaluate_bid(&order, *usd_unit_value, &auction)
-                            {
+                            if let Some(bid) = self.evaluate_bid(order, *usd_unit_value, auction) {
                                 // submit bid
                                 if let Err(err) = tx.send(bid).await {
-                                    panic!("bid sender errored unexpectedly: {:?}", err);
+                                    panic!("bid sender errored unexpectedly: {err:?}");
                                 }
                             }
                         } else {
-                            warn!(
-                                "no USD price for {}, skipping bid evaluation",
-                                auction_denom
-                            );
+                            warn!("no USD price for {auction_denom}, skipping bid evaluation");
                         }
                     }
                 }
@@ -145,14 +138,14 @@ impl Watcher {
         if order.minimum_usd_value_out as f64 <= usd_value_out {
             info!(
                 "order qualifies for bid. usomm offer = {}, minimum token out = {}, usd value out = {}",
-                max_allowed_usomm_offer, 
-                min_possible_token_out, 
+                max_allowed_usomm_offer,
+                min_possible_token_out,
                 usd_value_out
             );
 
             return Some(Bid {
-                auction_id: auction.id.clone(),
-                fee_token: order.fee_token.clone(),
+                auction_id: auction.id,
+                fee_token: order.fee_token,
                 maximum_usomm_in: max_allowed_usomm_offer,
                 minimum_tokens_out: min_possible_token_out,
             });

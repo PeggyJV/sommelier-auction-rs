@@ -45,7 +45,7 @@ impl OrderEngine {
             .for_each(|order| match orders.get_mut(&order.fee_token) {
                 Some(v) => v.push(order),
                 None => {
-                    orders.insert(order.fee_token.clone(), vec![order]);
+                    orders.insert(order.fee_token, vec![order]);
                 }
             });
 
