@@ -1,5 +1,6 @@
 use crate::order::Order;
 
+#[derive(Debug, Default, serde::Deserialize, serde::Serialize)]
 pub struct Config {
     /// Optional gRPC endpoint. Used for querying auction data.
     pub grpc_endpoint: Option<String>,
