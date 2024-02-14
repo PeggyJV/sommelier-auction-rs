@@ -9,5 +9,6 @@ pub fn denom_to_coingecko_id(denom: Denom) -> String {
         Denom::USDT => "tether".to_string(),
         Denom::WBTC => "wrapped-bitcoin".to_string(),
         Denom::WETH => "weth".to_string(),
+        Denom::EMPTY => "".to_string(),
     }
 }

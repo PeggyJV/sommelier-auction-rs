@@ -2,8 +2,10 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Denom {
+    #[default]
+    EMPTY,
     #[serde(rename = "gravity0x6B175474E89094C44Da98b954EedeAC495271d0F")]
     DAI,
     #[serde(rename = "gravity0x853d955aCEf822Db058eb8505911ED77F175b99e")]
@@ -30,6 +32,7 @@ impl Display for Denom {
             Denom::USDT => write!(f, "gravity0xdAC17F958D2ee523a2206206994597C13D831ec7"),
             Denom::WBTC => write!(f, "gravity0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
             Denom::WETH => write!(f, "gravity0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+            Denom::EMPTY => Err(std::fmt::Error)
         }
     }
 }

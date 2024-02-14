@@ -135,7 +135,7 @@ impl Watcher {
         );
         let usd_value_out = min_possible_token_out as f64 * usd_unit_value;
 
-        if order.minimum_usd_value_out as f64 <= usd_value_out {
+        if order.minimum_usd_value_out <= usd_value_out {
             info!(
                 "order qualifies for bid. usomm offer = {}, minimum token out = {}, usd value out = {}",
                 max_allowed_usomm_offer,
