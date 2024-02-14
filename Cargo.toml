@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/sommelier-auction-proto",
-    "crates/sommelier-auction",
+    "crates/sommelier-auction", "crates/price_feed",
 ]
 defaults-members = [
     "sommelier-auction-proto",
