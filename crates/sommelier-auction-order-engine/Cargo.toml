@@ -1,0 +1,12 @@
+[package]
+name = "sommelier-auction-order-engine"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eyre.workspace = true
+serde.workspace = true
+sommelier-auction = { path = "../sommelier-auction" }
+tokio = { version = "1.36.0", features = ["rt-multi-thread", "macros"] }
