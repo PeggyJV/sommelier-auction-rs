@@ -4,6 +4,7 @@ members = [
     "crates/sommelier-auction-order-engine",
     "crates/sommelier-auction-proto",
     "crates/price_feed",
+    "bin/auction-bot",
 ]
 defaults-members = [
     "sommelier-auction",
@@ -11,9 +12,7 @@ defaults-members = [
     "sommelier-auction-proto",
     "price_feed",
 ]
-exclude = [
-    "crates/sommelier-auction-proto-build",
-]
+exclude = ["crates/sommelier-auction-proto-build"]
 resolver = "2"
 
 [workspace.package]
@@ -26,3 +25,9 @@ eyre = "0.6"
 prost = "0.7"
 serde = { version = "1.0.196", features = ["derive"] }
 tonic = "0.4"
+price_feed = { path = "crates/price_feed" }
+sommelier-auction = { path = "crates/sommelier-auction" }
+sommelier-auction-order-engine = { path = "crates/sommelier-auction-order-engine" }
+sommelier-auction-proto = { path = "crates/sommelier-auction-proto" }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
