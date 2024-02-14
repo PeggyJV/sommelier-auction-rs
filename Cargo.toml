@@ -17,7 +17,7 @@ resolver = "2"
 
 [workspace.package]
 verson = "0.1.0"
-authors = ["Collin Brittain"]
+authors = ["Collin Brittain", "Zaki Manian"]
 edition = "2021"
 
 [workspace.dependencies]

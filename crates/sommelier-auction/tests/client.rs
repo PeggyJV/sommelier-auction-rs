@@ -1,7 +1,6 @@
 use assay::assay;
 use futures::executor::block_on;
 use sommelier_auction::{denom::Denom, AccountInfo};
-use sommelier_auction_proto::auction::Bid;
 
 /// Basic no-error or expected error tests for all client queries
 #[assay]

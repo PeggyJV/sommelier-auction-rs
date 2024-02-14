@@ -73,7 +73,7 @@ impl Client {
 
         let request = QueryEndedAuctionRequest { auction_id };
         match self.auction_client.query_ended_auction(request).await {
-            Ok(response) => return Ok(response.into_inner().auction.unwrap()),
+            Ok(response) => Ok(response.into_inner().auction.unwrap()),
             Err(err) => {
                 if !err.to_string().contains("No ended auction found for id") {
                     return Err(err.into());
@@ -236,9 +236,9 @@ impl Client {
         if let Some(data) = response.clone().deliver_tx.data {
             let msg_response = MsgSubmitBidResponse::decode(data.value().as_ref())?;
 
-            // if the bid is not present, return an error 
+            // if the bid is not present, return an error
             if let Some(bid) = msg_response.bid {
-                return Ok(BidResult::from(bid));
+                return Ok(bid);
             }
         }
 

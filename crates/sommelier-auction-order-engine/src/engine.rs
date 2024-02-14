@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use eyre::Result;
-use sommelier_auction::{bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters, auction::Auction, AccountInfo};
-use tokio::{join, task::JoinSet};
+use sommelier_auction::{
+    bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters, AccountInfo,
+};
+use tracing::{debug, error, info};
 
 use crate::{config::Config, order::Order, watcher::Watcher};
 
@@ -37,14 +39,17 @@ impl OrderEngine {
 
         // load orders
         let mut orders = HashMap::<Denom, Vec<Order>>::new();
-        config.orders
+        config
+            .orders
             .into_iter()
             .for_each(|order| match orders.get_mut(&order.fee_token) {
                 Some(v) => v.push(order),
                 None => {
-                    orders.insert(order.fee_token.clone(), vec![order]);
+                    orders.insert(order.fee_token, vec![order]);
                 }
             });
+
+        debug!("loaded orders: {:?}", orders);
 
         Self {
             orders,
@@ -60,16 +65,22 @@ impl OrderEngine {
     }
 
     pub async fn start(&mut self) -> Result<()> {
-        let mut watcher = Some(Watcher::new(self.orders.clone(), self.grpc_endpoint.clone()));
+        info!("starting auction bot");
+        let mut watcher = Some(Watcher::new(
+            self.orders.clone(),
+            self.grpc_endpoint.clone(),
+        ));
         self.auction_parameters = Some(self.client.as_mut().unwrap().auction_parameters().await?);
 
         let (tx, mut rx) = tokio::sync::mpsc::channel::<Bid>(self.orders.len());
 
-        // auction monitoring thread 
+        // auction monitoring thread
         let handle = tokio::spawn(async move {
+            info!("starting watcher thread");
             loop {
                 if let Err(err) = watcher.as_mut().unwrap().monitor_auctions(tx.clone()).await {
-                    // log and restart
+                    error!("watcher returned an error: {:?}", err);
+                    continue;
                 }
 
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -78,16 +89,18 @@ impl OrderEngine {
 
         // bid submission service
         let sender = if let Some(key_path) = self.signer_key_path.clone() {
-            AccountInfo::from_pem(&key_path).expect("failed to load key") 
+            AccountInfo::from_pem(&key_path).expect("failed to load key")
         } else if let Ok(mnemonic) = std::env::var("SOMMELIER_AUCTION_MNEMONIC") {
-            AccountInfo::from_mnemonic(&mnemonic, "").expect("failed to construct signer from mnemonic")
+            AccountInfo::from_mnemonic(&mnemonic, "")
+                .expect("failed to construct signer from mnemonic")
         } else {
-            panic!("");
+            handle.abort();
+            panic!("no signer key provided and no mnemonic found in environment. either provide a key_path in the config or set SOMMELIER_AUCTION_MNEMONIC in the environment to a 24 word phrase.");
         };
 
         while let Some(bid) = rx.recv().await {
             if let Err(err) = self.client.as_mut().unwrap().submit_bid(&sender, bid).await {
-                // log
+                error!("error submitting bid: {:?}", err);
             }
         }
 
