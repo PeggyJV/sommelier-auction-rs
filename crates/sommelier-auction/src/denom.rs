@@ -26,6 +26,23 @@ pub enum Denom {
     GoerliWETH,
 }
 
+impl Denom {
+    pub fn decimals(&self) -> u8 {
+        match self {
+            Denom::DAI => 18,
+            Denom::FRAX => 18,
+            Denom::USOMM => 6,
+            Denom::USDC => 6,
+            Denom::USDT => 6,
+            Denom::WBTC => 8,
+            Denom::WETH => 18,
+            Denom::EMPTY => 0,
+            Denom::GoerliUSDC => 6,
+            Denom::GoerliWETH => 18
+        }
+    }
+}
+
 impl Display for Denom {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

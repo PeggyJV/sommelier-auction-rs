@@ -70,7 +70,6 @@ impl OrderEngine {
             self.orders.clone(),
             self.grpc_endpoint.clone(),
         ));
-        self.auction_parameters = Some(self.client.as_mut().unwrap().auction_parameters().await?);
 
         let (tx, mut rx) = tokio::sync::mpsc::channel::<Bid>(self.orders.len());
 
@@ -98,8 +97,9 @@ impl OrderEngine {
             panic!("no signer key provided and no mnemonic found in environment. either provide a key_path in the config or set SOMMELIER_AUCTION_MNEMONIC in the environment to a 24 word phrase.");
         };
 
+        let mut client = Client::with_endpoints(self.rpc_endpoint.clone(), self.grpc_endpoint.clone()).await?;
         while let Some(bid) = rx.recv().await {
-            if let Err(err) = self.client.as_mut().unwrap().submit_bid(&sender, bid).await {
+            if let Err(err) = client.submit_bid(&sender, bid).await {
                 error!("error submitting bid: {:?}", err);
             }
         }

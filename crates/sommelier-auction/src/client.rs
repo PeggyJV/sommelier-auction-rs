@@ -211,7 +211,7 @@ impl Client {
             denom: ocular::cosmrs::Denom::from_str("usomm")?,
         });
         let chain_context = ocular::chain::ChainContext {
-            id: "sommelier-3".to_string(),
+            id: "chardonnay".to_string(),
             prefix: "somm".to_string(),
         };
         let signed_tx = unsigned_tx
