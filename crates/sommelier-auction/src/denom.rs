@@ -20,6 +20,10 @@ pub enum Denom {
     WBTC,
     #[serde(rename = "gravity0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")]
     WETH,
+    #[serde(rename = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4")]
+    GoerliUSDC,
+    #[serde(rename = "gravity0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6")]
+    GoerliWETH,
 }
 
 impl Display for Denom {
@@ -32,7 +36,9 @@ impl Display for Denom {
             Denom::USDT => write!(f, "gravity0xdAC17F958D2ee523a2206206994597C13D831ec7"),
             Denom::WBTC => write!(f, "gravity0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
             Denom::WETH => write!(f, "gravity0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
-            Denom::EMPTY => Err(std::fmt::Error)
+            Denom::EMPTY => Err(std::fmt::Error),
+            Denom::GoerliUSDC => write!(f, "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"),
+            Denom::GoerliWETH => write!(f, "gravity0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6")
         }
     }
 }
@@ -49,6 +55,8 @@ impl TryFrom<String> for Denom {
             "gravity0xdAC17F958D2ee523a2206206994597C13D831ec7" => Ok(Denom::USDT),
             "gravity0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" => Ok(Denom::WBTC),
             "gravity0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" => Ok(Denom::WETH),
+            "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4" => Ok(Denom::GoerliUSDC),
+            "gravity0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6" => Ok(Denom::GoerliWETH),
             _ => Err(eyre::eyre!("invalid denom")),
         }
     }

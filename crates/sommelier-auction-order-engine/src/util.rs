@@ -10,5 +10,9 @@ pub fn denom_to_coingecko_id(denom: Denom) -> String {
         Denom::WBTC => "wrapped-bitcoin".to_string(),
         Denom::WETH => "weth".to_string(),
         Denom::EMPTY => "".to_string(),
+
+        // for testing 
+        Denom::GoerliUSDC => "usdc".to_string(),
+        Denom::GoerliWETH => "weth".to_string(),
     }
 }
