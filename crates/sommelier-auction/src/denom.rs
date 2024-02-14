@@ -55,7 +55,7 @@ impl TryFrom<&String> for Denom {
     type Error = eyre::Report;
 
     fn try_from(value: &String) -> Result<Self, Self::Error> {
-       Denom::try_from(value.to_owned()) 
+        Denom::try_from(value.to_owned())
     }
 }
 
@@ -64,4 +64,3 @@ impl From<Denom> for String {
         denom.to_string()
     }
 }
-

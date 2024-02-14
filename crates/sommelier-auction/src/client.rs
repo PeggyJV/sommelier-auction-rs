@@ -236,7 +236,7 @@ impl Client {
         if let Some(data) = response.clone().deliver_tx.data {
             let msg_response = MsgSubmitBidResponse::decode(data.value().as_ref())?;
 
-            // if the bid is not present, return an error 
+            // if the bid is not present, return an error
             if let Some(bid) = msg_response.bid {
                 return Ok(BidResult::from(bid));
             }

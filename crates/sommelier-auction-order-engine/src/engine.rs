@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
 use eyre::Result;
-use sommelier_auction::{bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters, auction::Auction, AccountInfo};
+use sommelier_auction::{
+    auction::Auction, bid::Bid, client::Client, denom::Denom, parameters::AuctionParameters,
+    AccountInfo,
+};
 use tokio::{join, task::JoinSet};
 
-use crate::{config::Config, order::Order, watcher::Watcher};
+use crate::{config::Config, order::Order, util, watcher::Watcher};
 
 pub struct OrderEngine {
     pub orders: HashMap<Denom, Vec<Order>>,
@@ -37,7 +40,8 @@ impl OrderEngine {
 
         // load orders
         let mut orders = HashMap::<Denom, Vec<Order>>::new();
-        config.orders
+        config
+            .orders
             .into_iter()
             .for_each(|order| match orders.get_mut(&order.fee_token) {
                 Some(v) => v.push(order),
@@ -60,12 +64,15 @@ impl OrderEngine {
     }
 
     pub async fn start(&mut self) -> Result<()> {
-        let mut watcher = Some(Watcher::new(self.orders.clone(), self.grpc_endpoint.clone()));
+        let mut watcher = Some(Watcher::new(
+            self.orders.clone(),
+            self.grpc_endpoint.clone(),
+        ));
         self.auction_parameters = Some(self.client.as_mut().unwrap().auction_parameters().await?);
 
         let (tx, mut rx) = tokio::sync::mpsc::channel::<Bid>(self.orders.len());
 
-        // auction monitoring thread 
+        // auction monitoring thread
         let handle = tokio::spawn(async move {
             loop {
                 if let Err(err) = watcher.as_mut().unwrap().monitor_auctions(tx.clone()).await {
@@ -78,9 +85,10 @@ impl OrderEngine {
 
         // bid submission service
         let sender = if let Some(key_path) = self.signer_key_path.clone() {
-            AccountInfo::from_pem(&key_path).expect("failed to load key") 
+            AccountInfo::from_pem(&key_path).expect("failed to load key")
         } else if let Ok(mnemonic) = std::env::var("SOMMELIER_AUCTION_MNEMONIC") {
-            AccountInfo::from_mnemonic(&mnemonic, "").expect("failed to construct signer from mnemonic")
+            AccountInfo::from_mnemonic(&mnemonic, "")
+                .expect("failed to construct signer from mnemonic")
         } else {
             panic!("");
         };
