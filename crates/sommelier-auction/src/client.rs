@@ -230,10 +230,9 @@ impl Client {
 
         println!("response data: {:?}", response.deliver_tx.data);
 
-        // extract the Bid from the response. since we are using broadcast_sync, this is the result
-        // of CheckTx and may not actually exist on chain. broadcast_commit is frequently
-        // unreliable due to timeout before DeliverTx returns, so it's unlikely anything would be
-        // gained by using it instead. consumers should query the chain to confirm Bid settlement.
+        // extract the Bid from the response. the rust implementation of BroadcastCommit can be
+        // flaky. it may error due to a client timeout even if the transaction ultimately lands in
+        // a block. consumers should query bids to see definitively if theirs settled.
         if let Some(data) = response.clone().deliver_tx.data {
             let msg_response = MsgSubmitBidResponse::decode(data.value().as_ref())?;
 
