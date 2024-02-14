@@ -1,11 +1,13 @@
 [workspace]
 members = [
-    "crates/sommelier-auction-proto",
     "crates/sommelier-auction",
+    "crates/sommelier-auction-order-engine",
+    "crates/sommelier-auction-proto",
 ]
 defaults-members = [
-    "sommelier-auction-proto",
     "sommelier-auction",
+    "sommelier-auction-order-engine",
+    "sommelier-auction-proto",
 ]
 exclude = [
     "crates/sommelier-auction-proto-build",
@@ -20,4 +22,5 @@ edition = "2021"
 [workspace.dependencies]
 eyre = "0.6"
 prost = "0.7"
+serde = { version = "1.0.196", features = ["derive"] }
 tonic = "0.4"

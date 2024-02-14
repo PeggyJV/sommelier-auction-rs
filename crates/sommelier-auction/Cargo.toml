@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 eyre.workspace = true
 prost.workspace = true
+serde.workspace = true
 tonic.workspace = true
 
 sommelier-auction-proto = { path = "../sommelier-auction-proto" }

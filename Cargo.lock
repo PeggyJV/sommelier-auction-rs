@@ -1794,8 +1794,19 @@ dependencies = [
  "lazy_static",
  "ocular",
  "prost 0.7.0",
+ "serde",
  "sommelier-auction-proto",
  "tonic 0.4.3",
+]
+
+[[package]]
+name = "sommelier-auction-order-engine"
+version = "0.1.0"
+dependencies = [
+ "eyre",
+ "serde",
+ "sommelier-auction",
+ "tokio",
 ]
 
 [[package]]
