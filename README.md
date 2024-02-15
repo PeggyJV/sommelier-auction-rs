@@ -78,7 +78,7 @@ User will find a following queries useful.
 sommelier query auction active-auctions --node "url"
 
 # Query the underlying erc20 contract address for a given denom
-sommelier query gravity denom-to-erc20 gravityxxxx --node  https://sommelier-rpc.polkachu.com:443
+sommelier query gravity denom-to-erc20 gravityxxxx --node  "url"
 
 ```
 
