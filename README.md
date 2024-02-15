@@ -2,7 +2,7 @@
 
 > DISCLAIMER: Users consume these crates at their own risk, understanding that they do not come with any implied expectation of profit and do come with the potential for realizing losses.
 
-This is a quickly thrown together repo that contains a simple bot designed to participate in Sommelier fee auctions. 
+This is a quickly thrown together repo that contains a simple bot designed to participate in Sommelier fee auctions.
 
 By "simple" I mean *very simple*. Once it decides a bid can be submitted it basically fires and forgets, submitting and then deleting the order from it's state without confirmation. It does not check your wallet balance. It's up to you to make sure the orders in your config file add up to a value less than or equal to your current usomm balance. Once there are no more orders to submit, it shuts down.
 
@@ -66,6 +66,24 @@ RUST_LOG=debug,h2=info,hyper=info,tower=info,rustls=info auction-bot --config <P
 
 *PLEASE NOTE*: If you see an error when a bid is submitted it is very possible the transaction was successful. You'll need to confirm on-chain by querying bids for the auction and checking for any with your sender address as the bidder, or by checking your wallet for gravity-denominated balances with the `sommelier` CLI.
 
+## Orders
+
+The `orders` section of the config file is a list of orders to submit. Orders are denom, amount and price in USD. The bot will take care of converting auctioned denoms and SOMM to USD.
+
+User will find a following queries useful.
+
+```bash
+
+# Query active auctions and get all denoms
+sommelier query auction active-auctions --node "url"
+
+# Query the underlying erc20 contract address for a given denom
+sommelier query gravity denom-to-erc20 gravityxxxx --node  https://sommelier-rpc.polkachu.com:443
+
+```
+
+Running the app will show delta between the current price of the auction.
+
 # License
 
 © 2024 Peggy J.V.
@@ -76,4 +94,4 @@ Apache License, Version 2.0 (LICENSE-APACHE)
 MIT license (LICENSE-MIT)
 at your option.
 
-The SPDX license identifier for this project is MIT OR Apache-2.0. 
+The SPDX license identifier for this project is MIT OR Apache-2.0.
