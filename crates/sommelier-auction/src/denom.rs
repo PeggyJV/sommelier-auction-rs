@@ -42,18 +42,18 @@ impl Denom {
         }
     }
 
-    pub fn symbol(&self) -> &str {
+    pub fn symbol(&self) -> String {
         match self {
-            Denom::DAI => "DAI",
-            Denom::FRAX => "FRAX",
-            Denom::USOMM => "USOMM",
-            Denom::USDC => "USDC",
-            Denom::USDT => "USDT",
-            Denom::WBTC => "WBTC",
-            Denom::WETH => "WETH",
-            Denom::EMPTY => "",
-            Denom::GoerliUSDC => "GoerliUSDC",
-            Denom::GoerliWETH => "GoerliWETH",
+            Denom::DAI => "DAI".to_string(),
+            Denom::FRAX => "FRAX".to_string(),
+            Denom::USOMM => "USOMM".to_string(),
+            Denom::USDC => "USDC".to_string(),
+            Denom::USDT => "USDT".to_string(),
+            Denom::WBTC => "WBTC".to_string(),
+            Denom::WETH => "WETH".to_string(),
+            Denom::EMPTY => "".to_string(),
+            Denom::GoerliUSDC => "GoerliUSDC".to_string(),
+            Denom::GoerliWETH => "GoerliWETH".to_string(),
         }
     }
 }
