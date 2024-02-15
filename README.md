@@ -18,13 +18,33 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 # Installation
 
-Requires rust toolchain including `cargo` to be installed
+Right now you'll have to build the binary yourself. This requires `cargo`, which is installed by `rustup`, a Rust toolchain management program.
+
+To install `rustup`, go [here](https://www.rust-lang.org/tools/install). They provide a link for installing on Windows if you can't run the curl commands.
+
+If everything worked, you should be able to run
 
 ```bash
+cargo --version
+# output will be something like: cargo 1.74.0 (ecb9851af 2023-10-18)
+```
+
+Next, clone this repo and build the bot. If you don't have `git` installed, you can also go [here](), click the green button that says "Code", and click "Download Zip". You'll then need to unzip the folder.
+
+```bash
+# don't worry about the git command if you downloaded a .zip and unzipped the repo
 git clone https://github.com/peggyjv/sommelier-auction-bot.git
 cd sommelier-auction-bot
 cargo install --bin auction-bot --path ./bin/auction-bot
 ```
+
+If the installation worked, you should be able to run 
+
+```bash
+auction-bot
+```
+
+You should see some kind of error about needing a config file.
 
 # Usage
 
