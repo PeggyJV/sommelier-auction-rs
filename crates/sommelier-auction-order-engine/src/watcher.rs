@@ -174,19 +174,19 @@ impl Watcher {
             .clone()
             .unwrap()
             .amount
-            .parse::<u64>()
+            .parse::<u128>()
             .unwrap();
 
         // the auction will give us the best possible price which makes this simpler
         let max_allowed_usomm_offer = order.maximum_usomm_in;
         let min_possible_token_out = std::cmp::min(
-            (max_allowed_usomm_offer as f64 / auction_unit_price_in_usomm) as u64,
+            (max_allowed_usomm_offer as f64 / auction_unit_price_in_usomm) as u128,
             remaining_tokens_for_sale,
         );
         let usd_value_out = min_possible_token_out as f64 * usd_unit_value;
 
         debug!(
-            "usd_unit_value = {}, auction_unit_price_in_usomm = {}, remaining_tokens_for_sale = {}, max_allowed_usomm_offer = {}, min_possible_token_out = {}, usd_value_out = {}",   
+            "usd_unit_value = {}, auction_unit_price_in_usomm = {}, remaining_tokens_for_sale = {}, max_allowed_usomm_offer = {}, min_possible_token_out = {}, usd_value_out = {}",
             usd_unit_value, auction_unit_price_in_usomm, remaining_tokens_for_sale, max_allowed_usomm_offer, min_possible_token_out, usd_value_out
         );
 
@@ -201,7 +201,7 @@ impl Watcher {
             return Some(Bid {
                 auction_id: auction.id,
                 fee_token: order.fee_token,
-                maximum_usomm_in: max_allowed_usomm_offer,
+                maximum_usomm_in: max_allowed_usomm_offer as u128,
                 minimum_tokens_out: min_possible_token_out,
             });
         }

@@ -19,7 +19,7 @@ pub struct OrderEngine {
     pub rpc_endpoint: String,
     //    pub total_usomm_budget: u64,
     // total amount of usomm that has been spent on bids. this value can never exceed total_usomm_budget
-    pub total_usomm_spent: u64,
+    pub total_usomm_spent: u128,
     pub auction_parameters: Option<AuctionParameters>,
     pub signer_key_path: Option<String>,
 }
