@@ -1,6 +1,10 @@
-# endpoints will default to polkachu if unset
+# Endpoints will default to polkachu if unset
 #rpc_endpoint = "https://localhost:26657"
 #grpc_endpoint = "https://localhost:9090"
+
+# You can set a 24-word mnemonic in the SOMMELIER_AUCTION_MNEMONIC env var instead of using a key path.
+# This MVP version of the bot doesn't support encrypted key files. 
+#key_path = "/path/to/key"
 
 [[orders]]
 fee_token = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"

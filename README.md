@@ -30,6 +30,8 @@ cargo install --bin auction-bot --path ./bin/auction-bot
 
 There is an example config TOML `example-config.toml`. You'll need to set the `rpc_endpoint` and `grpc_endpoint` if you don't want to use Polkachu (default).
 
+The bidder wallet is set by either setting `key_path` in the config file to a path to a .pem key file, or by setting the `SOMMELIER_AUCTION_MNEMONIC` environment variable to a 24-word phrase. It cannot be 12. Obviously, the wallet must have enough uSOMM in it to cover your orders.
+
 Simply run
 
 ```bash
