@@ -11,9 +11,8 @@ pub fn denom_to_coingecko_id(denom: Denom) -> String {
         Denom::WETH => "weth".to_string(),
         Denom::EMPTY => "".to_string(),
 
-        // for testing 
+        // for testing
         Denom::GoerliUSDC => "usd-coin".to_string(),
         Denom::GoerliWETH => "weth".to_string(),
     }
 }
-

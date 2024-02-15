@@ -34,15 +34,24 @@ impl Watcher {
 
     // This will probably hit the per-minute query rate limit, so we just move on if we fail to get
     // a price.
-    async fn refresh_prices(&mut self, coingecko_ids_reverse_lookup: HashMap<String, Denom>) -> Result<()> {
+    async fn refresh_prices(
+        &mut self,
+        coingecko_ids_reverse_lookup: HashMap<String, Denom>,
+    ) -> Result<()> {
         debug!("refreshing prices");
-        
-        let coingecko_ids = coingecko_ids_reverse_lookup.keys().cloned().collect::<Vec<String>>();
+
+        let coingecko_ids = coingecko_ids_reverse_lookup
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
         match price_feed::get_usd_price_for_assets(None, coingecko_ids.clone()).await {
-            Ok(prices) => self.prices = prices.into_iter().map(|(cid, p)| (coingecko_ids_reverse_lookup.get(&cid).unwrap().clone(), p)).collect(),
-            Err(err) => {
-                return Err(eyre!("failed to get prices for {coingecko_ids:?}: {err:?}"))
+            Ok(prices) => {
+                self.prices = prices
+                    .into_iter()
+                    .map(|(cid, p)| (coingecko_ids_reverse_lookup.get(&cid).unwrap().clone(), p))
+                    .collect()
             }
+            Err(err) => return Err(eyre!("failed to get prices for {coingecko_ids:?}: {err:?}")),
         };
 
         debug!("price cache {:?}", self.prices);
@@ -61,8 +70,19 @@ impl Watcher {
         self.client =
             Some(Client::with_endpoints("".to_string(), self.grpc_endpoint.clone()).await?);
         let mut count = 0;
-        let coingecko_ids = self.orders.keys().map(|d| (util::denom_to_coingecko_id(*d), *d)).collect::<HashMap<String, Denom>>();
+        let coingecko_ids = self
+            .orders
+            .keys()
+            .map(|d| (util::denom_to_coingecko_id(*d), *d))
+            .collect::<HashMap<String, Denom>>();
         loop {
+            debug!("orders in state: {:?}", self.orders);
+            if self.orders.iter().all(|(_, v)| v.is_empty()) {
+                info!("no more orders! shutting down");
+                
+                return Ok(())
+            }
+
             if let Err(err) = self.refresh_active_auctions().await {
                 error!("failed to refresh active auctions: {err:?}");
                 warn!("retrying auction refresh in 5 seconds");
@@ -77,6 +97,8 @@ impl Watcher {
             }
 
             count += 1;
+
+            let mut sent_orders = Vec::new();
 
             // for each active auction, check if any orders qualify for a bid
             for auction in &self.active_auctions {
@@ -104,12 +126,21 @@ impl Watcher {
                                 if let Err(err) = tx.send(bid).await {
                                     panic!("bid sender errored unexpectedly: {err:?}");
                                 }
+
+                                sent_orders.push(order.clone());
                             }
                         } else {
                             warn!("no USD price for {auction_denom}, skipping bid evaluation");
                         }
                     }
                 }
+            }
+
+            // remove sent orders from the orders map
+            for order in sent_orders {
+                debug!("removing sent order {order:?}");
+                let orders = self.orders.get_mut(&order.fee_token).unwrap();
+                orders.retain(|o| o != &order);
             }
 
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -123,7 +154,6 @@ impl Watcher {
         debug!("evaluating bid for order: {:?}", order);
         let denom = order.fee_token.clone();
         let usd_unit_value = usd_unit_value / denom.decimals() as f64;
-        debug!("raw auction unit price in usomm: {:?}", &auction.current_unit_price_in_usomm);
         let auction_unit_price_in_usomm =
             f64::from_str(&auction.current_unit_price_in_usomm).unwrap();
         // divide by 1e18 because sdk.Dec is just a BigInt and the exponent info is lost when

@@ -1,6 +1,5 @@
 rpc_endpoint = "https://chardonnay0.somm.fi:26657"
 grpc_endpoint = "https://chardonnay0.somm.fi:9090"
-total_usomm_budget = 50000000
 
 [[orders]]
 fee_token = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"

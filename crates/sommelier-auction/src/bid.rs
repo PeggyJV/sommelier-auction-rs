@@ -1,6 +1,7 @@
 use crate::denom::Denom;
 
 /// Represents an order for one auction
+#[derive(Debug, Clone)]
 pub struct Bid {
     pub auction_id: u32,
     pub fee_token: Denom,

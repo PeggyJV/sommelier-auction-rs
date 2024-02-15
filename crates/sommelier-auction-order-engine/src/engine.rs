@@ -17,7 +17,7 @@ pub struct OrderEngine {
     // max amount of usomm allowed to use on bids. if there are bids that haven't been submitted
     // when this is reached, they will be cancelled.
     pub rpc_endpoint: String,
-    pub total_usomm_budget: u64,
+//    pub total_usomm_budget: u64,
     // total amount of usomm that has been spent on bids. this value can never exceed total_usomm_budget
     pub total_usomm_spent: u64,
     pub auction_parameters: Option<AuctionParameters>,
@@ -57,7 +57,7 @@ impl OrderEngine {
             grpc_endpoint,
             prices: HashMap::new(),
             rpc_endpoint,
-            total_usomm_budget: config.total_usomm_budget,
+//            total_usomm_budget: config.total_usomm_budget,
             total_usomm_spent: 0,
             auction_parameters: None,
             signer_key_path: config.key_path,
@@ -82,7 +82,8 @@ impl OrderEngine {
                     continue;
                 }
 
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                // intentional shutdown
+                break;
             }
         });
 
@@ -97,14 +98,22 @@ impl OrderEngine {
             panic!("no signer key provided and no mnemonic found in environment. either provide a key_path in the config or set SOMMELIER_AUCTION_MNEMONIC in the environment to a 24 word phrase.");
         };
 
-        let mut client = Client::with_endpoints(self.rpc_endpoint.clone(), self.grpc_endpoint.clone()).await?;
+        let mut client =
+            Client::with_endpoints(self.rpc_endpoint.clone(), self.grpc_endpoint.clone()).await?;
         while let Some(bid) = rx.recv().await {
-            if let Err(err) = client.submit_bid(&sender, bid).await {
+            if let Err(err) = client.submit_bid(&sender, bid.clone()).await {
                 error!("error submitting bid: {:?}", err);
+                info!("this is likely a client timeout and the bid may be submitted successfully on chain.");
             }
+
+            // to keep things simple and cautious we optimistically update the total_usomm_spent here.
+            // in reality the spent amount could be less.
+            self.total_usomm_spent += bid.maximum_usomm_in;
         }
 
         handle.abort();
+
+        info!("shutdown complete");
 
         Ok(())
     }
