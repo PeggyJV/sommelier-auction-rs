@@ -192,10 +192,11 @@ impl Watcher {
 
         if order.minimum_usd_value_out <= usd_value_out {
             info!(
-                "order qualifies for bid. usomm offer = {}, minimum token out = {}, usd value out = {}",
+                "order qualifies for bid. usomm offer = {}, minimum token out = {}, usd value out = {} for {}",
                 max_allowed_usomm_offer,
                 min_possible_token_out,
-                usd_value_out
+                usd_value_out,
+                order.fee_token
             );
 
             return Some(Bid {
@@ -204,6 +205,11 @@ impl Watcher {
                 maximum_usomm_in: max_allowed_usomm_offer as u128,
                 minimum_tokens_out: min_possible_token_out,
             });
+        } else {
+            info!(
+                " usd value out = {} does not meet minimum usd value out = {} for {}",
+                usd_value_out, order.minimum_usd_value_out, order.fee_token
+            );
         }
 
         None
