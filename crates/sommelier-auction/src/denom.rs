@@ -38,7 +38,7 @@ impl Denom {
             Denom::WETH => 18,
             Denom::EMPTY => 0,
             Denom::GoerliUSDC => 6,
-            Denom::GoerliWETH => 18
+            Denom::GoerliWETH => 18,
         }
     }
 }
@@ -55,7 +55,7 @@ impl Display for Denom {
             Denom::WETH => write!(f, "gravity0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
             Denom::EMPTY => Err(std::fmt::Error),
             Denom::GoerliUSDC => write!(f, "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"),
-            Denom::GoerliWETH => write!(f, "gravity0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6")
+            Denom::GoerliWETH => write!(f, "gravity0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"),
         }
     }
 }

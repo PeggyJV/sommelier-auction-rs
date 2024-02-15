@@ -17,7 +17,7 @@ pub struct OrderEngine {
     // max amount of usomm allowed to use on bids. if there are bids that haven't been submitted
     // when this is reached, they will be cancelled.
     pub rpc_endpoint: String,
-//    pub total_usomm_budget: u64,
+    //    pub total_usomm_budget: u64,
     // total amount of usomm that has been spent on bids. this value can never exceed total_usomm_budget
     pub total_usomm_spent: u64,
     pub auction_parameters: Option<AuctionParameters>,
@@ -57,7 +57,7 @@ impl OrderEngine {
             grpc_endpoint,
             prices: HashMap::new(),
             rpc_endpoint,
-//            total_usomm_budget: config.total_usomm_budget,
+            //            total_usomm_budget: config.total_usomm_budget,
             total_usomm_spent: 0,
             auction_parameters: None,
             signer_key_path: config.key_path,

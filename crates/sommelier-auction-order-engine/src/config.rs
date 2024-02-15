@@ -7,7 +7,7 @@ pub struct Config {
     /// Optional RPC endpoint. Used for submitting bids.
     pub rpc_endpoint: Option<String>,
     /// The maximum amount of USOMM that can be spent on bids
-//    pub total_usomm_budget: u64,
+    //    pub total_usomm_budget: u64,
     /// The orders loaded in from a orderfile
     pub orders: Vec<Order>,
     /// Key for signing and spending wallet

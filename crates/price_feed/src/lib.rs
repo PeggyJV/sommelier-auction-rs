@@ -18,9 +18,11 @@ pub async fn get_somm_price(coingecko_url: Option<&'static str>) -> Result<f64> 
             if response.contains_key("sommelier") {
                 Ok(response["sommelier"].usd.unwrap())
             } else {
-                Err(eyre::eyre!("Failed to get SOMM price: response didn't contain key"))
+                Err(eyre::eyre!(
+                    "Failed to get SOMM price: response didn't contain key"
+                ))
             }
-        },
+        }
         Err(err) => Err(eyre::eyre!("Failed to get SOMM price: {err:?}")),
     }
 }
@@ -43,10 +45,10 @@ pub async fn get_usd_price_for_assets(
         Ok(response) => {
             for asset in assets {
                 if response.contains_key(&asset) {
-                   prices.insert(asset.to_string(), response[&asset].usd.unwrap()); 
-                } 
+                    prices.insert(asset.to_string(), response[&asset].usd.unwrap());
+                }
             }
-        },
+        }
         Err(err) => return Err(eyre::eyre!("Failed to get prices for assets: {err:?}")),
     }
 
@@ -65,7 +67,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_usd_price_for_asset() {
-        let prices = get_usd_price_for_assets(None, vec!["weth".to_string(), "usd-coin".to_string()]).await.unwrap();
+        let prices =
+            get_usd_price_for_assets(None, vec!["weth".to_string(), "usd-coin".to_string()])
+                .await
+                .unwrap();
         assert!(prices.len() > 0);
     }
 }

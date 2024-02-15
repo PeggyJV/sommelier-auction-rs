@@ -79,8 +79,8 @@ impl Watcher {
             debug!("orders in state: {:?}", self.orders);
             if self.orders.iter().all(|(_, v)| v.is_empty()) {
                 info!("no more orders! shutting down");
-                
-                return Ok(())
+
+                return Ok(());
             }
 
             if let Err(err) = self.refresh_active_auctions().await {
