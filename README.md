@@ -48,9 +48,15 @@ You should see some kind of error about needing a config file.
 
 # Usage
 
-There is an example config TOML `example-config.toml`. You'll need to set the `rpc_endpoint` and `grpc_endpoint` if you don't want to use Polkachu (default).
+There is an example config TOML `example-config.toml`. You'll need to set the `rpc_endpoint` and `grpc_endpoint` if you don't want to use Polkachu --node https://sommelier-rpc.polkachu.com:443 (default).
 
-The bidder wallet is set by either setting `key_path` in the config file to a path to a .pem key file, or by setting the `SOMMELIER_AUCTION_MNEMONIC` environment variable to a 24-word phrase. It cannot be 12. Obviously, the wallet must have enough uSOMM in it to cover your orders.
+The bidder wallet is set by either setting `key_path` in the config file to a path to a .pem key file, or by setting the `SOMMELIER_AUCTION_MNEMONIC` environment variable to a 24-word phrase. It cannot be 12. 
+
+```bash
+sommelier keys add [auction_key]
+export SOMMELIER_AUCTION_MNEMONIC="the 24 word mnemonic"
+```
+Obviously, the wallet must have enough uSOMM in it to cover your orders.
 
 Simply run
 
@@ -68,7 +74,7 @@ RUST_LOG=debug,h2=info,hyper=info,tower=info,rustls=info auction-bot --config <P
 
 ## Orders
 
-The `orders` section of the config file is a list of orders to submit. Orders are denom, amount and price in USD. The bot will take care of converting auctioned denoms and SOMM to USD.
+The `orders` section of the config file is a list of orders to submit. Orders are [denom](https://github.com/PeggyJV/sommelier-auction-bot/blob/main/crates/sommelier-auction/src/denom.rs), amount and price in USD. The bot will take care of converting auctioned denoms and SOMM to USD.
 
 User will find a following queries useful.
 
@@ -80,6 +86,11 @@ sommelier query auction active-auctions --node "url"
 # Query the underlying erc20 contract address for a given denom
 sommelier query gravity denom-to-erc20 gravityxxxx --node  "url"
 
+# Query bank balances when orders clear to see the gravity assets that were auctioned off
+sommelier query bank balances [auction address] --node "url"
+
+# Send gravity assets to ethereum wallet
+sommelier tx gravity send-to-ethereum [eth_ address] [transfer amount in gravity denom] [fee amount in same denom] --from [auction_key] --chain-id sommelier-3 --node "url"
 ```
 
 Running the app will show delta between the current price of the auction.
