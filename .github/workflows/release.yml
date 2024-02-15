@@ -45,7 +45,7 @@ jobs:
       - name: build-rust
         run: |
           rustup target add x86_64-unknown-linux-musl
-          cargo build --target x86_64-unknown-linux-musl --release --all
+          cargo build --target x86_64-unknown-linux-musl --release --bin auction-bot
       # Create Release and Upload artifacts
       - name: Release
         uses: softprops/action-gh-release@v1
