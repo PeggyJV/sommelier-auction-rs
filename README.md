@@ -4,15 +4,45 @@
 
 This is a quickly thrown together repo that contains a simple bot designed to participate in Sommelier fee auctions. 
 
+By "simple" I mean *very simple*. Once it decides a bid can be submitted it basically fires and forgets, submitting and then deleting the order from it's state without confirmation. It does not check your wallet balance. It's up to you to make sure the orders in your config file add up to a value less than or equal to your current usomm balance. Once there are no more orders to submit, it shuts down.
+
 The `sommelier-auction-protos` crate contains proto bindings for the Sommelier chain's `x/auction` and `x/cellarfees` Cosmos SDK modules.
 
 The `sommelier-auction` crate is a generalized auction library containing a client for querying auction and bid data and submitting bids.
 
 The `sommelier-auction-order-engine` crate is a *very* simple order engine. It *does not* check that the uSOMM it will bid has a USD value that results in a favorable transaction. It only check that the uSOMM-denominated cost meets the user's specified parameters.
 
-#Contributing
+# Contributing
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as below, without any additional terms or conditions.
+
+# Installation
+
+Requires rust toolchain including `cargo` to be installed
+
+```bash
+git clone https://github.com/peggyjv/sommelier-auction-bot.git
+cd sommelier-auction-bot
+cargo install --bin auction-bot --path ./bin/auction-bot
+```
+
+# Usage
+
+There is an example config TOML `example-config.toml`. You'll need to set the `rpc_endpoint` and `grpc_endpoint` if you don't want to use Polkachu (default).
+
+Simply run
+
+```bash
+auction-bot --config <PATH TO CONFIG TOML>
+```
+
+If you want more verbose logs run
+
+```bash
+RUST_LOG=debug,h2=info,hyper=info,tower=info,rustls=info auction-bot --config <PATH TO CONFIG TOML>
+```
+
+*PLEASE NOTE*: If you see an error when a bid is submitted it is very possible the transaction was successful. You'll need to confirm on-chain by querying bids for the auction and checking for any with your sender address as the bidder, or by checking your wallet for gravity-denominated balances with the `sommelier` CLI.
 
 # License
 

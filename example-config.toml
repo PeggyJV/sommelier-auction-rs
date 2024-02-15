@@ -1,5 +1,6 @@
-rpc_endpoint = "https://chardonnay0.somm.fi:26657"
-grpc_endpoint = "https://chardonnay0.somm.fi:9090"
+# endpoints will default to polkachu if unset
+#rpc_endpoint = "https://localhost:26657"
+#grpc_endpoint = "https://localhost:9090"
 
 [[orders]]
 fee_token = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"

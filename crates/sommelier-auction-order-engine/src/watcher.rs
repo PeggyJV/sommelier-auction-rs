@@ -77,6 +77,7 @@ impl Watcher {
             .collect::<HashMap<String, Denom>>();
         loop {
             debug!("orders in state: {:?}", self.orders);
+            info!("monitoring auctions");
             if self.orders.iter().all(|(_, v)| v.is_empty()) {
                 info!("no more orders! shutting down");
 
@@ -91,6 +92,13 @@ impl Watcher {
                 continue;
             }
 
+            if self.active_auctions.is_empty() {
+                info!("no active auctions, retrying in 5 minutes. auctions last a long time, you're not missing anything.");
+                tokio::time::sleep(tokio::time::Duration::from_secs(300)).await;
+
+                continue;
+            }
+
             // everything few loops so we don't hit the rate limit
             if count % 4 == 0 {
                 self.refresh_prices(coingecko_ids.clone()).await?;
@@ -101,6 +109,7 @@ impl Watcher {
             let mut sent_orders = Vec::new();
 
             // for each active auction, check if any orders qualify for a bid
+            info!("evaluating orders for auctions");
             for auction in &self.active_auctions {
                 let auction_denom = match Denom::try_from(
                     auction
@@ -138,12 +147,13 @@ impl Watcher {
 
             // remove sent orders from the orders map
             for order in sent_orders {
-                debug!("removing sent order {order:?}");
+                info!("removing sent order from state: {order:?}");
                 let orders = self.orders.get_mut(&order.fee_token).unwrap();
                 orders.retain(|o| o != &order);
             }
 
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            // roughly every block
+            tokio::time::sleep(std::time::Duration::from_secs(6)).await;
         }
     }
 
