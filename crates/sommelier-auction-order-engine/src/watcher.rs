@@ -163,7 +163,7 @@ impl Watcher {
     fn evaluate_bid(&self, order: &Order, usd_unit_value: f64, auction: &Auction) -> Option<Bid> {
         debug!("evaluating bid for order: {:?}", order);
         let denom = order.fee_token.clone();
-        let usd_unit_value = usd_unit_value / denom.decimals() as f64;
+        let usd_unit_value = usd_unit_value / 10u128.pow(denom.decimals() as u32) as f64;
         let auction_unit_price_in_usomm =
             f64::from_str(&auction.current_unit_price_in_usomm).unwrap();
         // divide by 1e18 because sdk.Dec is just a BigInt and the exponent info is lost when
