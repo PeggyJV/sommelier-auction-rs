@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
-use eyre::Result;
+use eyre::{eyre, Result};
 use sommelier_auction::{auction::Auction, bid::Bid, client::Client, denom::Denom};
 use tokio::sync::mpsc::Sender;
 use tracing::{debug, error, info, warn};
@@ -33,21 +34,27 @@ impl Watcher {
 
     // This will probably hit the per-minute query rate limit, so we just move on if we fail to get
     // a price.
-    async fn refresh_prices(&mut self) -> Result<()> {
+    async fn refresh_prices(
+        &mut self,
+        coingecko_ids_reverse_lookup: HashMap<String, Denom>,
+    ) -> Result<()> {
         debug!("refreshing prices");
-        for denom in self.orders.keys() {
-            let coingecko_id = util::denom_to_coingecko_id(*denom);
-            match price_feed::get_usd_price_for_asset(None, &coingecko_id).await {
-                Ok(price) => self.prices.insert(*denom, price),
-                Err(err) => {
-                    error!("failed to get price for {coingecko_id}: {err:?}");
-                    continue;
-                }
-            };
 
-            debug!("updated price for {}: {}", coingecko_id, self.prices[denom]);
-        }
+        let coingecko_ids = coingecko_ids_reverse_lookup
+            .keys()
+            .cloned()
+            .collect::<Vec<String>>();
+        match price_feed::get_usd_price_for_assets(None, coingecko_ids.clone()).await {
+            Ok(prices) => {
+                self.prices = prices
+                    .into_iter()
+                    .map(|(cid, p)| (coingecko_ids_reverse_lookup.get(&cid).unwrap().clone(), p))
+                    .collect()
+            }
+            Err(err) => return Err(eyre!("failed to get prices for {coingecko_ids:?}: {err:?}")),
+        };
 
+        debug!("price cache {:?}", self.prices);
         Ok(())
     }
 
@@ -62,8 +69,20 @@ impl Watcher {
     pub async fn monitor_auctions(&mut self, tx: Sender<Bid>) -> Result<()> {
         self.client =
             Some(Client::with_endpoints("".to_string(), self.grpc_endpoint.clone()).await?);
-
+        let mut count = 0;
+        let coingecko_ids = self
+            .orders
+            .keys()
+            .map(|d| (util::denom_to_coingecko_id(*d), *d))
+            .collect::<HashMap<String, Denom>>();
         loop {
+            debug!("orders in state: {:?}", self.orders);
+            if self.orders.iter().all(|(_, v)| v.is_empty()) {
+                info!("no more orders! shutting down");
+
+                return Ok(());
+            }
+
             if let Err(err) = self.refresh_active_auctions().await {
                 error!("failed to refresh active auctions: {err:?}");
                 warn!("retrying auction refresh in 5 seconds");
@@ -72,7 +91,14 @@ impl Watcher {
                 continue;
             }
 
-            self.refresh_prices().await?;
+            // everything few loops so we don't hit the rate limit
+            if count % 4 == 0 {
+                self.refresh_prices(coingecko_ids.clone()).await?;
+            }
+
+            count += 1;
+
+            let mut sent_orders = Vec::new();
 
             // for each active auction, check if any orders qualify for a bid
             for auction in &self.active_auctions {
@@ -100,12 +126,21 @@ impl Watcher {
                                 if let Err(err) = tx.send(bid).await {
                                     panic!("bid sender errored unexpectedly: {err:?}");
                                 }
+
+                                sent_orders.push(order.clone());
                             }
                         } else {
                             warn!("no USD price for {auction_denom}, skipping bid evaluation");
                         }
                     }
                 }
+            }
+
+            // remove sent orders from the orders map
+            for order in sent_orders {
+                debug!("removing sent order {order:?}");
+                let orders = self.orders.get_mut(&order.fee_token).unwrap();
+                orders.retain(|o| o != &order);
             }
 
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -117,8 +152,13 @@ impl Watcher {
     // USOMM offer.
     fn evaluate_bid(&self, order: &Order, usd_unit_value: f64, auction: &Auction) -> Option<Bid> {
         debug!("evaluating bid for order: {:?}", order);
+        let denom = order.fee_token.clone();
+        let usd_unit_value = usd_unit_value / denom.decimals() as f64;
         let auction_unit_price_in_usomm =
-            auction.current_unit_price_in_usomm.parse::<f64>().unwrap();
+            f64::from_str(&auction.current_unit_price_in_usomm).unwrap();
+        // divide by 1e18 because sdk.Dec is just a BigInt and the exponent info is lost when
+        // serialized into a proto.
+        let auction_unit_price_in_usomm = auction_unit_price_in_usomm / 1_000_000_000_000_000_000.0;
         let remaining_tokens_for_sale = auction
             .remaining_tokens_for_sale
             .clone()
@@ -134,6 +174,11 @@ impl Watcher {
             remaining_tokens_for_sale,
         );
         let usd_value_out = min_possible_token_out as f64 * usd_unit_value;
+
+        debug!(
+            "usd_unit_value = {}, auction_unit_price_in_usomm = {}, remaining_tokens_for_sale = {}, max_allowed_usomm_offer = {}, min_possible_token_out = {}, usd_value_out = {}",   
+            usd_unit_value, auction_unit_price_in_usomm, remaining_tokens_for_sale, max_allowed_usomm_offer, min_possible_token_out, usd_value_out
+        );
 
         if order.minimum_usd_value_out <= usd_value_out {
             info!(

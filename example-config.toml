@@ -1,18 +1,13 @@
-total_usomm_budget = 10000000
-key_path = "./test"
+rpc_endpoint = "https://chardonnay0.somm.fi:26657"
+grpc_endpoint = "https://chardonnay0.somm.fi:9090"
 
 [[orders]]
-fee_token = "gravity0x853d955aCEf822Db058eb8505911ED77F175b99e"
-maximum_usomm_in = 10000000
+fee_token = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"
+maximum_usomm_in = 25000000
 minimum_usd_value_out = 100.00
 
 [[orders]]
-fee_token = "gravity0x6B175474E89094C44Da98b954EedeAC495271d0F"
-maximum_usomm_in = 10000000
-minimum_usd_value_out = 100.00
-
-[[orders]]
-fee_token = "gravity0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-maximum_usomm_in = 10000000
+fee_token = "gravity0xd35CCeEAD182dcee0F148EbaC9447DA2c4D449c4"
+maximum_usomm_in = 26000000
 minimum_usd_value_out = 100.00
 
