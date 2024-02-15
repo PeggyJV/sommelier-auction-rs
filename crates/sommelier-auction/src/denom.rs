@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
@@ -39,6 +39,21 @@ impl Denom {
             Denom::EMPTY => 0,
             Denom::GoerliUSDC => 6,
             Denom::GoerliWETH => 18,
+        }
+    }
+
+    pub fn symbol(&self) -> &str {
+        match self {
+            Denom::DAI => "DAI",
+            Denom::FRAX => "FRAX",
+            Denom::USOMM => "USOMM",
+            Denom::USDC => "USDC",
+            Denom::USDT => "USDT",
+            Denom::WBTC => "WBTC",
+            Denom::WETH => "WETH",
+            Denom::EMPTY => "",
+            Denom::GoerliUSDC => "GoerliUSDC",
+            Denom::GoerliWETH => "GoerliWETH",
         }
     }
 }
@@ -90,5 +105,13 @@ impl TryFrom<&String> for Denom {
 impl From<Denom> for String {
     fn from(denom: Denom) -> String {
         denom.to_string()
+    }
+}
+
+impl FromStr for Denom {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Denom::try_from(s.to_owned())
     }
 }

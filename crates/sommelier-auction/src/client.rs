@@ -79,7 +79,7 @@ impl Client {
                     return Err(err.into());
                 }
 
-                return Err(eyre::eyre!("no auction found with id {}", auction_id));
+                Err(eyre::eyre!("no auction found with id {}", auction_id))
             }
         }
     }
