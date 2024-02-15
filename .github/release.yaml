@@ -1,0 +1,58 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Release
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: build-release-assets
+    runs-on: ubuntu-20.04
+    steps:
+      # Setup Rust Environment
+      - name: setup-rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      # Checkout repository code
+      - name: checkout-code
+        uses: actions/checkout@v2
+      # Rust Cache
+      - name: rust-cache
+        uses: actions/cache@v3
+        id: rust-cache
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+      # Install OpenSSL dependencies
+      - name: install-packages
+        run: sudo apt-get install -y libssl-dev musl-tools
+      # Build Rust Artifacts
+      - name: build-rust
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --target x86_64-unknown-linux-musl --release --all
+      # Create Release and Upload artifacts
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            target/x86_64-unknown-linux-musl/release/steward
+            LICENSE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
