@@ -6,17 +6,10 @@ members = [
     "crates/price_feed",
     "bin/auction-bot",
 ]
-defaults-members = [
-    "sommelier-auction",
-    "sommelier-auction-order-engine",
-    "sommelier-auction-proto",
-    "price_feed",
-]
 exclude = ["crates/sommelier-auction-proto-build"]
 resolver = "2"
 
 [workspace.package]
-verson = "0.1.0"
 authors = ["Collin Brittain", "Zaki Manian"]
 edition = "2021"
 

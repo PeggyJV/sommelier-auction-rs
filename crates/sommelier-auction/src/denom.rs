@@ -3,8 +3,11 @@ use std::{fmt::Display, str::FromStr};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
+/// Represents a valid denomination on the Sommelier blockchain. Provides convenience methods for
+/// mapping between formats and getting decimals.
 pub enum Denom {
     #[default]
+    /// Should not be used. Necessary for handling default deserializiation values.
     EMPTY,
     #[serde(rename = "gravity0x6B175474E89094C44Da98b954EedeAC495271d0F")]
     DAI,
