@@ -1,7 +1,6 @@
 [package]
 name = "price_feed"
 version = "0.1.0"
-verson.workspace = true
 authors.workspace = true
 edition.workspace = true
 

@@ -15,6 +15,8 @@ pub type TxSyncResponse = ocular::cosmrs::rpc::endpoint::broadcast::tx_sync::Res
 pub const DEFAULT_GRPC_ENDPOINT: &str = "https://sommelier-grpc.polkachu.com:14190";
 pub const DEFAULT_RPC_ENDPOINT: &str = "https://sommelier-rpc.polkachu.com:443";
 
+#[derive(Debug, Clone)]
+/// A client for querying auction data and submitting bids.
 pub struct Client {
     rpc_endpoint: String,
     grpc_endpoint: String,
