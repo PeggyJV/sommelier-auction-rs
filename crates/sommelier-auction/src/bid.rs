@@ -5,7 +5,7 @@ use crate::denom::Denom;
 /// Represents an order for one auction
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bid {
-    /// The ID of the auction to submit big to
+    /// The ID of the auction to submit bid to
     pub auction_id: u32,
     /// The denomination of the token being auctioned
     pub fee_token: Denom,
